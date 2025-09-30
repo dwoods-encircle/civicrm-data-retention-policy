@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<menu>
+  <item>
+    <path>civicrm/admin/dataretentionpolicy/settings</path>
+    <page_callback>CRM_DataRetentionPolicy_Form_Settings</page_callback>
+    <title>Data Retention Policy</title>
+    <access_arguments>administer CiviCRM</access_arguments>
+    <page_type>Form</page_type>
+    <is_public>0</is_public>
+    <is_active>1</is_active>
+  </item>
+</menu>
