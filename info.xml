@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<extension key="org.example.dataretentionpolicy" type="module" name="Data Retention Policy" class="CRM_DataRetentionPolicy_ExtensionUtil" start="auto" version="1.0">
+<extension key="uk.co.encircle.dataretentionpolicy" type="module" name="Data Retention Policy" class="CRM_DataRetentionPolicy_ExtensionUtil" start="auto" version="1.0">
   <file>dataretentionpolicy.php</file>
   <requires>
     <required extension="org.civicrm.core" min="5.0"/>

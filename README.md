@@ -38,4 +38,4 @@ The extension registers a scheduled job named **Apply Data Retention Policies**.
 
 ## Development
 
-The extension key is `org.example.dataretentionpolicy`. Contributions are welcome via pull requests.
+The extension key is `uk.co.encircle.dataretentionpolicy`. Contributions are welcome via pull requests.
