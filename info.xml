@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 <extension key="uk.co.encircle.dataretentionpolicy" type="module" name="Data Retention Policy" class="CRM_DataRetentionPolicy_ExtensionUtil" start="auto" version="1.0">
-  <file>dataretentionpolicy.php</file>
+  <file>dataretentionpolicy</file>
+  <name>Data Retention Policy</name>
   <version>1.0</version>
   <releaseDate>2025-09-30</releaseDate>
   <maintainer>
