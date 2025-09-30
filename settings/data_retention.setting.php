@@ -10,6 +10,13 @@ return [
     'description' => E::ts('Delete contacts when they have no recorded activity newer than the configured number of years.'),
     'default' => 0,
   ],
+  'data_retention_contact_date_source' => [
+    'name' => 'data_retention_contact_date_source',
+    'type' => 'String',
+    'title' => E::ts('Contact retention date source'),
+    'description' => E::ts('Choose whether contacts are evaluated using their last activity date or their last login date when determining deletion.'),
+    'default' => 'activity',
+  ],
   'data_retention_contact_trash_days' => [
     'name' => 'data_retention_contact_trash_days',
     'type' => 'Integer',

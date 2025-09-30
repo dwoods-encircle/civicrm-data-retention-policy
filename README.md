@@ -6,6 +6,7 @@ This extension provides a configurable data retention policy for CiviCRM install
 
 * New **Data Retention Policy** settings screen under `Administer » System Settings`.
 * Individual retention periods (in years) for contacts, participants, and contributions.
+* Option to evaluate contact retention windows using either their last activity date or their last login date.
 * Separate control (in days) for how long deleted contacts remain in the trash before being purged permanently.
 * Scheduled job (`Apply Data Retention Policies`) which deletes records older than the defined retention window using the CiviCRM API.
 * Logging for records which cannot be deleted by the scheduled job.
@@ -25,7 +26,7 @@ The scheduled job evaluates the following activity dates when determining whethe
 
 | Entity        | Activity field(s) used |
 | ------------- | ---------------------- |
-| Contacts      | `last_activity_date`, falling back to `modified_date` or `created_date` |
+| Contacts      | `last_activity_date`, falling back to `modified_date` or `created_date` (or `log_date` from the CMS account when configured) |
 | Contacts (trash) | `modified_date` |
 | Participants  | `modified_date`, falling back to `register_date` or `create_date` |
 | Contributions | `receive_date`, falling back to `modified_date` or `create_date` |
