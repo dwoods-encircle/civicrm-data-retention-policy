@@ -2,7 +2,7 @@
 <menu>
   <item>
     <path>civicrm/admin/dataretentionpolicy/settings</path>
-    <parent>civicrm/admin/systemSettings</parent>
+    <parent>civicrm/admin/system</parent>
     <page_callback>CRM_DataRetentionPolicy_Form_Settings</page_callback>
     <title>Data Retention Policy</title>
     <access_arguments>administer CiviCRM</access_arguments>
