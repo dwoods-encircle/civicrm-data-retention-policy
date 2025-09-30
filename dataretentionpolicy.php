@@ -2,7 +2,11 @@
 
 use CRM_DataRetentionPolicy_ExtensionUtil as E;
 
-function dataretentionpolicy_civicrm_config(&$config) {}
+function dataretentionpolicy_civicrm_config(&$config) {
+  set_include_path(get_include_path() . PATH_SEPARATOR . __DIR__);
+  CRM_Core_ClassLoader::singleton()->register();
+  CRM_Core_Smarty::singleton()->addTemplateDir(__DIR__ . DIRECTORY_SEPARATOR . 'templates');
+}
 
 function dataretentionpolicy_civicrm_install() {
   return TRUE;
