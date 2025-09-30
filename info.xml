@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<extension key="uk.co.encircle.dataretentionpolicy" type="module" name="Data Retention Policy" class="CRM_DataRetentionPolicy_ExtensionUtil" start="auto" version="1.0">
+  <file>dataretentionpolicy.php</file>
+  <requires>
+    <required extension="org.civicrm.core" min="5.0"/>
+  </requires>
+  <license>AGPL-3.0</license>
+  <copyright>Copyright (C) 2024 Example</copyright>
+  <description>Provides configurable data retention policies and a scheduled job to purge expired records.</description>
+</extension>
