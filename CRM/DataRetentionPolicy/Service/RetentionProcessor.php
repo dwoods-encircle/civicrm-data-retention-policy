@@ -6,7 +6,7 @@ class CRM_DataRetentionPolicy_Service_RetentionProcessor {
     $settings = Civi::settings();
     $results = [];
 
-    foreach ($this->getEntityConfigurations() as $settingKey => $config) {
+    foreach ($this->getEntityConfigurations($settings) as $settingKey => $config) {
       $amount = (int) $settings->get($settingKey);
       if ($amount <= 0) {
         $results[$config['entity']] = 0;
@@ -64,14 +64,27 @@ class CRM_DataRetentionPolicy_Service_RetentionProcessor {
     return $ids;
   }
 
-  protected function getEntityConfigurations() {
+  protected function getEntityConfigurations($settings = NULL) {
+    if ($settings === NULL) {
+      $settings = Civi::settings();
+    }
+
+    $contactDateSource = $settings->get('data_retention_contact_date_source');
+    if ($contactDateSource !== 'login') {
+      $contactDateSource = 'activity';
+    }
+    $contactDateExpression = 'COALESCE(last_activity_date, modified_date, created_date)';
+    if ($contactDateSource === 'login') {
+      $contactDateExpression = 'COALESCE((SELECT MAX(log_date) FROM civicrm_uf_match uf WHERE uf.contact_id = civicrm_contact.id), last_activity_date, modified_date, created_date)';
+    }
+
     return [
       'data_retention_contact_years' => [
         'entity' => 'Contact',
         'api_entity' => 'Contact',
         'table' => 'civicrm_contact',
         'id_field' => 'id',
-        'date_expression' => 'COALESCE(last_activity_date, modified_date, created_date)',
+        'date_expression' => $contactDateExpression,
         'additional_where' => 'is_deleted = 0',
         'modifier' => '-%d years',
       ],
