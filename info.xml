@@ -6,16 +6,15 @@
   <releaseDate>2025-09-30</releaseDate>
   <maintainer>
     <author>enCircle Solutions Ltd</author>
+    <email>support@encircle.co.uk</email>
   </maintainer>
-  <requires>
-    <required extension="org.civicrm.core" min="5.0"/>
-  </requires>
+  <urls>
+    <url desc="Main Extension Page">https://github.com/dwoods-encircle/civicrm-data-retention-policy</url>
+    <url desc="Documentation">https://github.com/dwoods-encircle/civicrm-data-retention-policy</url>
+    <url desc="Support">https://github.com/dwoods-encircle/civicrm-data-retention-policy</url>
+  </urls>
   <compatibility>
-    <civicrm>
-      <min>5.0</min>
-    </civicrm>
-    <php>8.1</php>
-    <smarty>5</smarty>
+      <min>5.82</min>
   </compatibility>
   <license>AGPL-3.0</license>
   <copyright>Copyright (C) 2024 Example</copyright>
