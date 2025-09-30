@@ -1,5 +1,9 @@
 <?php
 
+if (!class_exists('CRM_DataRetentionPolicy_ExtensionUtil')) {
+  require_once __DIR__ . '/../CRM/DataRetentionPolicy/ExtensionUtil.php';
+}
+
 use CRM_DataRetentionPolicy_ExtensionUtil as E;
 
 return [
