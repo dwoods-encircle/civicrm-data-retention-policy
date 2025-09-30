@@ -9,14 +9,17 @@ function dataretentionpolicy_civicrm_config(&$config) {
 }
 
 function dataretentionpolicy_civicrm_install() {
+  dataretentionpolicy_create_audit_log_table();
   return TRUE;
 }
 
 function dataretentionpolicy_civicrm_uninstall() {
+  CRM_Core_DAO::executeQuery('DROP TABLE IF EXISTS civicrm_data_retention_audit_log');
   return TRUE;
 }
 
 function dataretentionpolicy_civicrm_enable() {
+  dataretentionpolicy_create_audit_log_table();
   return TRUE;
 }
 
@@ -118,4 +121,19 @@ function _dataretentionpolicy_insert_navigation_menu(&$menu, $path, $item) {
   }
 
   return FALSE;
+}
+
+function dataretentionpolicy_create_audit_log_table() {
+  $sql = "CREATE TABLE IF NOT EXISTS civicrm_data_retention_audit_log (
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    action VARCHAR(64) NOT NULL,
+    entity_type VARCHAR(128) NOT NULL,
+    entity_id INT UNSIGNED NULL,
+    action_date DATETIME NOT NULL,
+    details TEXT NULL,
+    PRIMARY KEY (id),
+    INDEX idx_action_date (action_date),
+    INDEX idx_entity (entity_type, entity_id)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci;";
+  CRM_Core_DAO::executeQuery($sql);
 }

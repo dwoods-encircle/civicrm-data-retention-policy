@@ -5,7 +5,9 @@
       <div class="label">{$form.$key.label}</div>
       <div class="content">
         {$form.$key.html}
-        <div class="description">{$definition.description}</div>
+        {if $definition.description}
+          <div class="description">{$definition.description}</div>
+        {/if}
       </div>
       <div class="clear"></div>
     </div>
