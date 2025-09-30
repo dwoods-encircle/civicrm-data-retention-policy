@@ -18,5 +18,9 @@
   </compatibility>
   <license>AGPL-3.0</license>
   <copyright>Copyright (C) 2024 Example</copyright>
+  <classloader>
+    <psr0 prefix="CRM_" path="."/>
+    <psr4 prefix="Civi\" path="Civi"/>
+  </classloader>
   <description>Provides configurable data retention policies and a scheduled job to purge expired records.</description>
 </extension>
