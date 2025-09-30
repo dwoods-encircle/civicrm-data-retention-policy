@@ -20,37 +20,6 @@ function dataretentionpolicy_civicrm_disable() {
   return TRUE;
 }
 
-function dataretentionpolicy_civicrm_navigationMenu(&$menu) {
-  $administerMenuId = CRM_Core_DAO::getFieldValue('CRM_Core_DAO_Navigation', 'Administer', 'id', 'name');
-  if (!$administerMenuId || empty($menu[$administerMenuId]['child'])) {
-    return;
-  }
-  foreach ($menu[$administerMenuId]['child'] as $id => $item) {
-    if ($item['name'] === 'System Settings') {
-      $childMenu =& $menu[$administerMenuId]['child'][$id]['child'];
-      if (!is_array($childMenu)) {
-        $childMenu = [];
-      }
-      $weight = empty($childMenu) ? 0 : (int) CRM_Utils_Array::value('weight', end($childMenu), 0) + 1;
-      $navId = CRM_Core_DAO::singleValueQuery('SELECT COALESCE(MAX(id), 0) + 1 FROM civicrm_navigation');
-      $childMenu[] = [
-        'attributes' => [
-          'label' => E::ts('Data Retention Policy'),
-          'name' => 'Data Retention Policy',
-          'url' => 'civicrm/admin/dataretentionpolicy/settings',
-          'permission' => 'administer CiviCRM',
-          'operator' => NULL,
-          'separator' => 0,
-          'parentID' => $id,
-          'navID' => $navId,
-          'weight' => $weight,
-        ],
-      ];
-      break;
-    }
-  }
-}
-
 function dataretentionpolicy_civicrm_xmlMenu(&$files) {
   if (!is_array($files)) {
     $files = [];
@@ -70,5 +39,24 @@ function dataretentionpolicy_civicrm_jobTypes(&$jobTypes) {
     'is_active' => 1,
     'api_entity' => 'DataRetentionPolicyJob',
     'api_action' => 'run',
+  ];
+}
+
+function dataretentionpolicy_civicrm_managed(&$entities) {
+  $entities[] = [
+    'module' => 'uk.co.encircle.dataretentionpolicy',
+    'name' => 'Data Retention Policy Job',
+    'entity' => 'Job',
+    'params' => [
+      'version' => 3,
+      'name' => 'Data Retention Job',
+      'description' => E::ts('Apply configured data retention policies.'),
+      'run_frequency' => 'Daily',
+      'api_entity' => 'DataRetentionPolicyJob',
+      'api_action' => 'run',
+      'parameters' => NULL,
+      'is_active' => 1,
+      'job_type' => 'data_retention_policy_cleanup',
+    ],
   ];
 }
