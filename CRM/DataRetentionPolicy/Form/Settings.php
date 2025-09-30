@@ -6,10 +6,19 @@ class CRM_DataRetentionPolicy_Form_Settings extends CRM_Core_Form {
 
   protected $settingKeys = [
     'data_retention_contact_years' => 'contact',
+    'data_retention_contact_unit' => 'contact',
     'data_retention_contact_date_source' => 'contact',
     'data_retention_contact_trash_days' => 'contact_trash',
+    'data_retention_contact_trash_unit' => 'contact_trash',
     'data_retention_participant_years' => 'participant',
+    'data_retention_participant_unit' => 'participant',
     'data_retention_contribution_years' => 'contribution',
+    'data_retention_contribution_unit' => 'contribution',
+    'data_retention_membership_years' => 'membership',
+    'data_retention_membership_unit' => 'membership',
+    'data_retention_clean_orphan_custom_data' => 'custom_data',
+    'data_retention_audit_log_years' => 'audit_log',
+    'data_retention_audit_log_unit' => 'audit_log',
   ];
 
   public function buildQuickForm() {
@@ -21,6 +30,9 @@ class CRM_DataRetentionPolicy_Form_Settings extends CRM_Core_Form {
       switch ($inputType) {
         case 'select':
           $this->add('select', $key, $definition['label'], CRM_Utils_Array::value('options', $definition, []));
+          break;
+        case 'checkbox':
+          $this->add('checkbox', $key, $definition['label']);
           break;
 
         default:
@@ -57,20 +69,29 @@ class CRM_DataRetentionPolicy_Form_Settings extends CRM_Core_Form {
     foreach (array_keys($this->settingKeys) as $setting) {
       $definition = CRM_Utils_Array::value($setting, $definitions, []);
       $valueType = CRM_Utils_Array::value('value_type', $definition, 'integer');
-      if ($valueType === 'string') {
-        $value = CRM_Utils_Array::value($setting, $values);
-        $options = CRM_Utils_Array::value('options', $definition, []);
-        if (!array_key_exists($value, $options)) {
-          $value = CRM_Utils_Array::value('default', $definition, '');
-        }
+
+      switch ($valueType) {
+        case 'string':
+          $value = CRM_Utils_Array::value($setting, $values);
+          $options = CRM_Utils_Array::value('options', $definition, []);
+          if (!array_key_exists($value, $options)) {
+            $value = CRM_Utils_Array::value('default', $definition, '');
+          }
+          break;
+
+        case 'boolean':
+          $value = !empty($values[$setting]) ? 1 : 0;
+          break;
+
+        default:
+          $value = CRM_Utils_Array::value($setting, $values);
+          $value = is_numeric($value) ? (int) $value : 0;
+          if ($value < 0) {
+            $value = 0;
+          }
+          break;
       }
-      else {
-        $value = CRM_Utils_Array::value($setting, $values);
-        $value = is_numeric($value) ? (int) $value : 0;
-        if ($value < 0) {
-          $value = 0;
-        }
-      }
+
       $settings->set($setting, $value);
     }
 
@@ -80,9 +101,17 @@ class CRM_DataRetentionPolicy_Form_Settings extends CRM_Core_Form {
   protected function getEntityDefinitions() {
     return [
       'data_retention_contact_years' => [
-        'label' => E::ts('Contact records (years)'),
-        'description' => E::ts('Contacts are deleted when their most recent activity, modification or creation is older than the configured number of years.'),
+        'label' => E::ts('Contact records (amount)'),
+        'description' => E::ts('Contacts are deleted when their most recent activity, modification or creation is older than the configured interval.'),
         'value_type' => 'integer',
+      ],
+      'data_retention_contact_unit' => [
+        'label' => E::ts('Contact records (unit)'),
+        'description' => '',
+        'input_type' => 'select',
+        'options' => $this->getIntervalUnitOptions(),
+        'value_type' => 'string',
+        'default' => 'year',
       ],
       'data_retention_contact_date_source' => [
         'label' => E::ts('Contact retention date source'),
@@ -96,20 +125,85 @@ class CRM_DataRetentionPolicy_Form_Settings extends CRM_Core_Form {
         'default' => 'activity',
       ],
       'data_retention_contact_trash_days' => [
-        'label' => E::ts('Contacts in trash (days)'),
-        'description' => E::ts('Contacts that have already been deleted (moved to the trash) are permanently removed after the configured number of days in the trash.'),
+        'label' => E::ts('Contacts in trash (amount)'),
+        'description' => E::ts('Contacts that have already been deleted (moved to the trash) are permanently removed after exceeding the configured interval in the trash.'),
         'value_type' => 'integer',
+      ],
+      'data_retention_contact_trash_unit' => [
+        'label' => E::ts('Contacts in trash (unit)'),
+        'description' => '',
+        'input_type' => 'select',
+        'options' => $this->getIntervalUnitOptions(),
+        'value_type' => 'string',
+        'default' => 'day',
       ],
       'data_retention_participant_years' => [
-        'label' => E::ts('Participant records (years)'),
-        'description' => E::ts('Participants are deleted when their most recent modification or registration is older than the configured number of years.'),
+        'label' => E::ts('Participant records (amount)'),
+        'description' => E::ts('Participants are deleted when their most recent modification or registration is older than the configured interval.'),
         'value_type' => 'integer',
+      ],
+      'data_retention_participant_unit' => [
+        'label' => E::ts('Participant records (unit)'),
+        'description' => '',
+        'input_type' => 'select',
+        'options' => $this->getIntervalUnitOptions(),
+        'value_type' => 'string',
+        'default' => 'year',
       ],
       'data_retention_contribution_years' => [
-        'label' => E::ts('Contribution records (years)'),
-        'description' => E::ts('Contributions are deleted when their receive date (or creation date if receive date is empty) is older than the configured number of years.'),
+        'label' => E::ts('Contribution records (amount)'),
+        'description' => E::ts('Contributions are deleted when their receive date (or creation date if receive date is empty) is older than the configured interval.'),
         'value_type' => 'integer',
       ],
+      'data_retention_contribution_unit' => [
+        'label' => E::ts('Contribution records (unit)'),
+        'description' => '',
+        'input_type' => 'select',
+        'options' => $this->getIntervalUnitOptions(),
+        'value_type' => 'string',
+        'default' => 'year',
+      ],
+      'data_retention_membership_years' => [
+        'label' => E::ts('Membership records (amount)'),
+        'description' => E::ts('Memberships are deleted when their most recent modification or creation is older than the configured interval.'),
+        'value_type' => 'integer',
+      ],
+      'data_retention_membership_unit' => [
+        'label' => E::ts('Membership records (unit)'),
+        'description' => '',
+        'input_type' => 'select',
+        'options' => $this->getIntervalUnitOptions(),
+        'value_type' => 'string',
+        'default' => 'year',
+      ],
+      'data_retention_clean_orphan_custom_data' => [
+        'label' => E::ts('Delete orphaned custom data records'),
+        'description' => E::ts('Remove orphaned rows from custom data tables each time the scheduled job runs.'),
+        'input_type' => 'checkbox',
+        'value_type' => 'boolean',
+      ],
+      'data_retention_audit_log_years' => [
+        'label' => E::ts('Audit log records (amount)'),
+        'description' => E::ts('Audit log entries are deleted after they exceed the configured interval.'),
+        'value_type' => 'integer',
+      ],
+      'data_retention_audit_log_unit' => [
+        'label' => E::ts('Audit log records (unit)'),
+        'description' => '',
+        'input_type' => 'select',
+        'options' => $this->getIntervalUnitOptions(),
+        'value_type' => 'string',
+        'default' => 'month',
+      ],
+    ];
+  }
+
+  protected function getIntervalUnitOptions() {
+    return [
+      'day' => E::ts('Days'),
+      'week' => E::ts('Weeks'),
+      'month' => E::ts('Months'),
+      'year' => E::ts('Years'),
     ];
   }
 
