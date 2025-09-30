@@ -3,7 +3,9 @@
 class CRM_DataRetentionPolicy_ExtensionUtil {
 
   const SHORT_NAME = 'dataretentionpolicy';
+
   const LONG_NAME = 'uk.co.encircle.dataretentionpolicy';
+
   const CLASS_PREFIX = 'CRM_DataRetentionPolicy';
 
   public static function ts($text, $params = []) {
