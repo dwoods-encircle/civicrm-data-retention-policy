@@ -1,1 +1,0 @@
-# civicrm-data-retention-policy
