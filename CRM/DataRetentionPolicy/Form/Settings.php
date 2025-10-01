@@ -48,6 +48,7 @@ class CRM_DataRetentionPolicy_Form_Settings extends CRM_Core_Form {
 
     $this->addButtons([
       ['type' => 'submit', 'name' => E::ts('Save'), 'isDefault' => TRUE],
+      ['type' => 'submit', 'name' => E::ts('Rollback deletions'), 'subName' => 'rollback'],
       ['type' => 'cancel', 'name' => E::ts('Cancel')],
     ]);
   }
@@ -62,6 +63,11 @@ class CRM_DataRetentionPolicy_Form_Settings extends CRM_Core_Form {
   }
 
   public function postProcess() {
+    if (!empty($this->_submitValues['_qf_Settings_next_rollback'])) {
+      $this->processRollback();
+      return;
+    }
+
     $values = $this->exportValues();
     $settings = Civi::settings();
 
@@ -96,6 +102,26 @@ class CRM_DataRetentionPolicy_Form_Settings extends CRM_Core_Form {
     }
 
     CRM_Core_Session::setStatus(E::ts('Data retention policy settings have been saved.'), E::ts('Saved'), 'success');
+  }
+
+  protected function processRollback() {
+    $processor = new CRM_DataRetentionPolicy_Service_RetentionProcessor();
+    $restored = $processor->rollbackDeletions();
+
+    if ($restored > 0) {
+      CRM_Core_Session::setStatus(
+        E::ts('Restored %1 records from the data retention audit log.', [1 => $restored]),
+        E::ts('Rollback complete'),
+        'success'
+      );
+    }
+    else {
+      CRM_Core_Session::setStatus(
+        E::ts('There were no deletions available to restore.'),
+        E::ts('Rollback complete'),
+        'info'
+      );
+    }
   }
 
   protected function getEntityDefinitions() {

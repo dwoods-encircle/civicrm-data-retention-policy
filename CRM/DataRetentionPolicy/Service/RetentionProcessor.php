@@ -43,6 +43,7 @@ class CRM_DataRetentionPolicy_Service_RetentionProcessor {
     $ids = $this->getIdsToDelete($config, $cutoff);
     $count = 0;
     foreach ($ids as $id) {
+      $snapshot = $this->getRecordSnapshot($config['api_entity'], $id);
       $params = ['id' => $id];
       if (!empty($config['api_params'])) {
         $params = array_merge($params, $config['api_params']);
@@ -50,9 +51,14 @@ class CRM_DataRetentionPolicy_Service_RetentionProcessor {
       try {
         civicrm_api3($config['api_entity'], 'delete', $params);
         $count++;
-        $this->logAction('delete', $config['entity'], $id, [
+        $context = [
           'cutoff' => $cutoff->format('Y-m-d H:i:s'),
-        ]);
+          'api_entity' => $config['api_entity'],
+        ];
+        if ($snapshot !== NULL) {
+          $context['record'] = $snapshot;
+        }
+        $this->logAction('delete', $config['entity'], $id, $context);
       }
       catch (CiviCRM_API3_Exception $e) {
         Civi::log()->error('Data Retention Policy failed to delete record', [
@@ -62,6 +68,7 @@ class CRM_DataRetentionPolicy_Service_RetentionProcessor {
         ]);
         $this->logAction('delete_failed', $config['entity'], $id, [
           'message' => $e->getMessage(),
+          'api_entity' => $config['api_entity'],
         ]);
       }
     }
@@ -312,6 +319,127 @@ class CRM_DataRetentionPolicy_Service_RetentionProcessor {
     }
 
     return $deleted;
+  }
+
+  public function rollbackDeletions() {
+    $sql = 'SELECT id, entity_type, entity_id, details FROM civicrm_data_retention_audit_log WHERE action = %1 ORDER BY id ASC';
+    $dao = CRM_Core_DAO::executeQuery($sql, [1 => ['delete', 'String']]);
+    $restored = 0;
+
+    while ($dao->fetch()) {
+      $details = CRM_Utils_JSON::decode($dao->details);
+      if (!is_array($details)) {
+        $this->logAction('rollback_failed', $dao->entity_type, $dao->entity_id, [
+          'message' => 'Audit log entry is missing rollback details.',
+          'audit_id' => $dao->id,
+        ]);
+        continue;
+      }
+
+      $apiEntity = CRM_Utils_Array::value('api_entity', $details, $dao->entity_type);
+      $record = CRM_Utils_Array::value('record', $details);
+
+      if (empty($record) || !is_array($record)) {
+        $this->logAction('rollback_failed', $apiEntity, $dao->entity_id, [
+          'message' => 'No record snapshot available for rollback.',
+          'audit_id' => $dao->id,
+        ]);
+        continue;
+      }
+
+      $params = $this->prepareRecordForCreate($record);
+      if (!isset($params['id']) && !empty($dao->entity_id)) {
+        $params['id'] = $dao->entity_id;
+      }
+
+      $created = $this->attemptRecordRestore($apiEntity, $params);
+
+      if (!$created && isset($params['id'])) {
+        $paramsWithoutId = $params;
+        unset($paramsWithoutId['id']);
+        $created = $this->attemptRecordRestore($apiEntity, $paramsWithoutId);
+      }
+
+      if ($created) {
+        $restored++;
+        $details['rolled_back_at'] = date('c');
+        CRM_Core_DAO::executeQuery(
+          'UPDATE civicrm_data_retention_audit_log SET action = %1, details = %2 WHERE id = %3',
+          [
+            1 => ['rolled_back', 'String'],
+            2 => [CRM_Utils_JSON::encode($details), 'String'],
+            3 => [$dao->id, 'Integer'],
+          ]
+        );
+
+        $restoredId = CRM_Utils_Array::value('id', $params);
+        if (!$restoredId) {
+          $restoredId = CRM_Utils_Array::value('id', $details['record'], $dao->entity_id);
+        }
+
+        $this->logAction('rollback_restored', $apiEntity, $restoredId, [
+          'source_audit_id' => $dao->id,
+        ]);
+      }
+      else {
+        $this->logAction('rollback_failed', $apiEntity, $dao->entity_id, [
+          'message' => 'Record could not be recreated from audit log.',
+          'audit_id' => $dao->id,
+        ]);
+      }
+    }
+
+    if ($restored === 0) {
+      $this->logAction('rollback_restored', 'AuditLog', NULL, [
+        'message' => 'No deletions were restored during rollback.',
+      ]);
+    }
+
+    return $restored;
+  }
+
+  protected function attemptRecordRestore($apiEntity, array $params) {
+    try {
+      civicrm_api3($apiEntity, 'create', $params);
+      return TRUE;
+    }
+    catch (CiviCRM_API3_Exception $e) {
+      Civi::log()->error('Data Retention Policy failed to restore record', [
+        'entity' => $apiEntity,
+        'params' => $params,
+        'message' => $e->getMessage(),
+      ]);
+      return FALSE;
+    }
+  }
+
+  protected function prepareRecordForCreate(array $record) {
+    unset($record['is_error'], $record['error_message']);
+
+    if (isset($record['id'])) {
+      $record['id'] = (int) $record['id'];
+    }
+
+    if (isset($record['is_deleted'])) {
+      $record['is_deleted'] = (int) $record['is_deleted'];
+    }
+
+    return $record;
+  }
+
+  protected function getRecordSnapshot($apiEntity, $id) {
+    try {
+      $record = civicrm_api3($apiEntity, 'getsingle', ['id' => $id]);
+      return $this->prepareRecordForCreate($record);
+    }
+    catch (CiviCRM_API3_Exception $e) {
+      Civi::log()->warning('Data Retention Policy failed to capture snapshot for audit log', [
+        'entity' => $apiEntity,
+        'id' => $id,
+        'message' => $e->getMessage(),
+      ]);
+      return NULL;
+    }
   }
 
   protected function logAction($action, $entityType, $entityId = NULL, array $context = []) {
